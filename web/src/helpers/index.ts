@@ -96,17 +96,31 @@ export const findAvailableSlot = (item: Slot, data: ItemData, items: Slot[]) => 
 export const getTargetInventory = (
   state: State,
   sourceType: Inventory['type'],
-  targetType?: Inventory['type']
-): { sourceInventory: Inventory; targetInventory: Inventory } => ({
-  sourceInventory: sourceType === InventoryType.PLAYER ? state.leftInventory : state.rightInventory,
-  targetInventory: targetType
+  targetType?: Inventory['type'],
+  sourceId?: string,
+  targetId?: string
+): { sourceInventory: Inventory; targetInventory: Inventory } => {
+  const findRight = (id?: string): Inventory => {
+    if (id && state.rightInventories.length > 0) {
+      const found = state.rightInventories.find((inv) => inv.id === id);
+      if (found) return found;
+    }
+    if (state.rightInventories.length > 0) return state.rightInventories[0];
+    return state.rightInventory;
+  };
+
+  const sourceInventory =
+    sourceType === InventoryType.PLAYER ? state.leftInventory : findRight(sourceId);
+  const targetInventory = targetType
     ? targetType === InventoryType.PLAYER
       ? state.leftInventory
-      : state.rightInventory
+      : findRight(targetId)
     : sourceType === InventoryType.PLAYER
-    ? state.rightInventory
-    : state.leftInventory,
-});
+    ? findRight(targetId)
+    : state.leftInventory;
+
+  return { sourceInventory, targetInventory };
+};
 
 export const itemDurability = (metadata: any, curTime: number) => {
   // sorry dunak

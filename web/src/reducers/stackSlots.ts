@@ -10,11 +10,13 @@ export const stackSlotsReducer: CaseReducer<
     toSlot: SlotWithItem;
     toType: Inventory['type'];
     count: number;
+    fromId?: string;
+    toId?: string;
   }>
 > = (state, action) => {
-  const { fromSlot, fromType, toSlot, toType, count } = action.payload;
+  const { fromSlot, fromType, toSlot, toType, count, fromId, toId } = action.payload;
 
-  const { sourceInventory, targetInventory } = getTargetInventory(state, fromType, toType);
+  const { sourceInventory, targetInventory } = getTargetInventory(state, fromType, toType, fromId, toId);
 
   const pieceWeight = fromSlot.weight / fromSlot.count;
 

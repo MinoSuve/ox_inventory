@@ -24,10 +24,12 @@ const initialState: State = {
     maxWeight: 0,
     items: [],
   },
+  rightInventories: [],
   additionalMetadata: new Array(),
   itemAmount: 0,
   shiftPressed: false,
   isBusy: false,
+  filterText: '',
 };
 
 export const inventorySlice = createSlice({
@@ -55,8 +57,20 @@ export const inventorySlice = createSlice({
     setShiftPressed: (state, action: PayloadAction<boolean>) => {
       state.shiftPressed = action.payload;
     },
+    setFilterText: (state, action: PayloadAction<string>) => {
+      state.filterText = action.payload;
+    },
     setContainerWeight: (state, action: PayloadAction<number>) => {
-      const container = state.leftInventory.items.find((item) => item.metadata?.container === state.rightInventory.id);
+      // Check in single rightInventory (backward compat)
+      let container = state.leftInventory.items.find((item) => item.metadata?.container === state.rightInventory.id);
+
+      // Also check across rightInventories array
+      if (!container) {
+        for (const inv of state.rightInventories) {
+          container = state.leftInventory.items.find((item) => item.metadata?.container === inv.id);
+          if (container) break;
+        }
+      }
 
       if (!container) return;
 
@@ -70,6 +84,7 @@ export const inventorySlice = createSlice({
       state.history = {
         leftInventory: current(state.leftInventory),
         rightInventory: current(state.rightInventory),
+        rightInventories: current(state.rightInventories),
       };
     });
     builder.addMatcher(isFulfilled, (state) => {
@@ -79,6 +94,9 @@ export const inventorySlice = createSlice({
       if (state.history && state.history.leftInventory && state.history.rightInventory) {
         state.leftInventory = state.history.leftInventory;
         state.rightInventory = state.history.rightInventory;
+        if (state.history.rightInventories) {
+          state.rightInventories = state.history.rightInventories;
+        }
       }
       state.isBusy = false;
     });
@@ -89,6 +107,7 @@ export const {
   setAdditionalMetadata,
   setItemAmount,
   setShiftPressed,
+  setFilterText,
   setupInventory,
   swapSlots,
   moveSlots,
@@ -98,7 +117,9 @@ export const {
 } = inventorySlice.actions;
 export const selectLeftInventory = (state: RootState) => state.inventory.leftInventory;
 export const selectRightInventory = (state: RootState) => state.inventory.rightInventory;
+export const selectRightInventories = (state: RootState) => state.inventory.rightInventories;
 export const selectItemAmount = (state: RootState) => state.inventory.itemAmount;
 export const selectIsBusy = (state: RootState) => state.inventory.isBusy;
+export const selectFilterText = (state: RootState) => state.inventory.filterText;
 
 export default inventorySlice.reducer;

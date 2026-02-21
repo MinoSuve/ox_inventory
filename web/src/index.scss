@@ -1,59 +1,31 @@
-$mainColor: #22232c;
-$textColor: #c1c2c5;
-$mainFont: Roboto;
+// === SoulCity-inspired ox_inventory theme ===
+// Color palette: dark navy, cyan/teal accents
+$mainColor: #0d1b2a;
+$mainColorLight: #132238;
+$textColor: #c8d6e5;
+$accentColor: #00e5ff;
+$accentColorDim: rgba(0, 229, 255, 0.3);
+$accentColorGlow: rgba(0, 229, 255, 0.15);
+$mainFont: 'Roboto', 'Segoe UI', sans-serif;
 
-$secondaryColor: rgba(12, 12, 12, 0.4);
-$secondaryColorHighlight: #33343F;
-$secondaryColorLight: rgba(0, 0, 0, 0.5);
-$secondaryColorDark: rgba(12, 12, 12, 0.8);
+$secondaryColor: rgba(10, 22, 40, 0.65);
+$secondaryColorHighlight: rgba(0, 229, 255, 0.12);
+$secondaryColorLight: rgba(0, 0, 0, 0.4);
+$secondaryColorDark: rgba(8, 18, 35, 0.9);
 
-// Rarity colors
-$rarityCommon: #ffffff;
-$rarityUncommon: #1eff00;
-$rarityRare: #0070dd;
-$rarityEpic: #a335ee;
-$rarityLegendary: #ff8000;
-$rarityArtifact: #e6cc80;
-$rarityRed: #ff0000;
-$rarityPink: #ff69b4;
-$rarityGold: #ffd700;
-$rarityRainbow: linear-gradient(45deg, #ff0000, #ff8000, #ffff00, #00ff00, #0080ff, #8000ff);
-$raritySilver: #c0c0c0;
-$rarityBronze: #cd7f32;
-$rarityCopper: #b87333;
-$rarityBlue: #0099ff;
-$rarityGreen: #00ff66;
-$rarityCyan: #00ffff;
-$rarityMagenta: #ff00ff;
-$rarityYellow: #ffff00;
-$rarityOrange: #ff6600;
-$rarityPurple: #9900ff;
-$rarityLime: #99ff00;
-$rarityTeal: #008080;
-$rarityIndigo: #4b0082;
-$rarityViolet: #8a2be2;
-$rarityMaroon: #800000;
-$rarityNavy: #000080;
-$rarityOlive: #808000;
-$rarityAqua: #00ffff;
-$rarityFuchsia: #ff00ff;
-$rarityBlack: #000000;
-$rarityWhite: #ffffff;
-$rarityCrimson: #dc143c;
-$rarityTurquoise: #40e0d0;
-$rarityLavender: #e6e6fa;
-$rarityRose: #ff007f;
+$slotBg: rgba(15, 30, 55, 0.7);
+$slotBorder: rgba(0, 229, 255, 0.15);
+$slotBorderHover: rgba(0, 229, 255, 0.5);
 
-$gridCols: 5;
+$gridCols: 6;
 $gridRows: 5;
-$gridSize: 10.2vh;
-$gridGap: 2px;
+$gridSize: 9.5vh;
+$gridGap: 3px;
 $containerSize: calc(#{$gridRows} * #{$gridSize + 0.22vh} + #{$gridRows} * #{$gridGap});
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
-    'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: $mainFont;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   height: 100vh;
@@ -70,8 +42,20 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
+// Custom scrollbar - thin cyan bar
 ::-webkit-scrollbar {
-  display: none;
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb {
+  background: $accentColor;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: lighten($accentColor, 10%);
 }
 
 p {
@@ -90,30 +74,32 @@ input[type='number']::-webkit-outer-spin-button {
 .app-wrapper {
   height: 100%;
   width: 100%;
-  color: white;
+  color: $textColor;
 }
 
+// === Context Menu ===
 .context-menu-list {
   min-width: 200px;
   background-color: $mainColor;
   color: $textColor;
   padding: 4px;
-  border-color: rgba(0, 0, 0, 0.2);
-  border-style: inset;
-  border-width: 1px;
+  border: 1px solid $slotBorder;
   border-radius: 4px;
   outline: none;
   display: flex;
   flex-direction: column;
+  backdrop-filter: blur(8px);
 }
 
-.context-menu-item  {
-  padding: 8px;
+.context-menu-item {
+  padding: 8px 12px;
   border-radius: 4px;
   background-color: transparent;
   outline: none;
   border: none;
   color: $textColor;
+  font-family: $mainFont;
+  font-size: 13px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -122,6 +108,7 @@ input[type='number']::-webkit-outer-spin-button {
   }
   &:hover {
     background-color: $secondaryColorHighlight;
+    color: $accentColor;
     cursor: pointer;
   }
 }
@@ -135,7 +122,7 @@ input[type='number']::-webkit-outer-spin-button {
 }
 
 button:active {
-  transform: translateY(3px);
+  transform: translateY(2px);
 }
 
 .item-drag-preview {
@@ -152,61 +139,148 @@ button:active {
   image-rendering: -webkit-optimize-contrast;
 }
 
+// === Main Layout ===
 .inventory-wrapper {
   display: flex;
   flex-direction: row;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   height: 100%;
-
-  gap: 20px;
+  padding-top: 4vh;
+  gap: 16px;
 }
 
+// === Left Inventory Wrapper ===
+.left-inventory-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+// === Filter Input ===
+.filter-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: $secondaryColor;
+  border: 1px solid $slotBorder;
+  border-radius: 4px;
+  padding: 6px 12px;
+  transition: border-color 0.2s;
+
+  &:focus-within {
+    border-color: $accentColor;
+  }
+}
+
+.filter-icon {
+  color: rgba(200, 214, 229, 0.4);
+  flex-shrink: 0;
+}
+
+.filter-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: $textColor;
+  font-family: $mainFont;
+  font-size: 13px;
+  flex: 1;
+  width: 100%;
+
+  &::placeholder {
+    color: rgba(200, 214, 229, 0.3);
+  }
+}
+
+.filter-clear-btn {
+  background: none;
+  border: none;
+  color: rgba(200, 214, 229, 0.4);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: $accentColor;
+  }
+  &:active {
+    transform: none;
+  }
+}
+
+// === Right Inventory Column (scrollable, stacked panels) ===
+.right-inventory-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.right-inventory-panel {
+  flex-shrink: 0;
+}
+
+// === Inventory Control ===
 .inventory-control {
   display: flex;
+  align-self: center;
 
   .inventory-control-wrapper {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 12px;
     justify-content: center;
     align-items: center;
   }
 
   .inventory-control-input {
     transition: 200ms;
-    padding: 16px 8px;
-    border-radius: 2.5%;
+    padding: 12px 8px;
+    border-radius: 4px;
     font-family: $mainFont;
-    font-size: 16px;
+    font-size: 14px;
     text-align: center;
     outline: none;
-    border: none;
-    color: #fff;
+    border: 1px solid $slotBorder;
+    color: $textColor;
     background-color: $secondaryColor;
+    width: 70px;
+
     &:focus-within {
+      border-color: $accentColor;
       background-color: $secondaryColorDark;
     }
   }
 
   .inventory-control-button {
-    font-size: 14px;
-    color: #fff;
+    font-size: 12px;
+    color: $textColor;
     background-color: $secondaryColor;
     transition: 200ms;
-    padding: 12px 8px;
-    border-radius: 2.5%;
-    border: none;
+    padding: 10px 8px;
+    border-radius: 4px;
+    border: 1px solid $slotBorder;
     text-transform: uppercase;
     font-family: $mainFont;
     width: 100%;
     font-weight: 500;
+    letter-spacing: 0.5px;
+
     &:hover {
-      background-color: $secondaryColorDark;
+      background-color: $secondaryColorHighlight;
+      border-color: $accentColor;
+      color: $accentColor;
+      cursor: pointer;
     }
   }
 }
 
+// === Useful Controls ===
 .useful-controls-dialog {
   background-color: $mainColor;
   position: absolute;
@@ -219,11 +293,12 @@ button:active {
   flex-direction: column;
   padding: 16px;
   border-radius: 4px;
+  border: 1px solid $slotBorder;
   gap: 16px;
 }
 
 .useful-controls-dialog-overlay {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
 }
 
 .useful-controls-dialog-title {
@@ -232,6 +307,7 @@ button:active {
   justify-content: space-between;
   align-items: center;
   font-size: 18px;
+  color: $accentColor;
 }
 
 .useful-controls-dialog-close {
@@ -253,12 +329,22 @@ button:active {
   display: flex;
   flex-direction: column;
   gap: 20px;
+
+  kbd {
+    background: $secondaryColor;
+    border: 1px solid $slotBorder;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 12px;
+    color: $accentColor;
+    font-family: monospace;
+  }
 }
 
 .divider {
   width: 100%;
   height: 1px;
-  background-color: rgba(255, 255, 255, 0.12);
+  background: linear-gradient(90deg, transparent, $accentColorDim, transparent);
 }
 
 .useful-controls-button {
@@ -266,45 +352,117 @@ button:active {
   bottom: 25px;
   right: 25px;
   transition: 200ms !important;
-  border: none;
-  color: white;
-  width: 52px;
-  height: 52px;
+  border: 1px solid $slotBorder !important;
+  color: $textColor;
+  width: 42px;
+  height: 42px;
   display: flex;
   justify-content: center;
   align-items: center;
-  fill: white;
-  border-radius: 5% !important;
+  fill: $textColor;
+  border-radius: 4px !important;
   background-color: $secondaryColor !important;
   &:hover {
-    background-color: $secondaryColorDark !important;
+    background-color: $secondaryColorHighlight !important;
+    border-color: $accentColor !important;
+    fill: $accentColor;
     cursor: pointer;
   }
 }
 
-.useful-controls-exit-button {
-  position: absolute !important;
-  right: 8px;
-  top: 8px;
-  border-radius: 2.5% !important;
-  color: grey !important;
-}
-
-// Dialog is used fro useful controls window
-
-
-// inventory grids
+// === Inventory Grid ===
 .inventory-grid-wrapper {
   display: flex;
   flex-direction: column;
   gap: calc($gridGap * 2);
 }
+
 .inventory-grid-header-wrapper {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  p {
-    font-size: 16px;
+  align-items: center;
+  padding: 4px 0;
+
+  .inventory-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .inventory-hex-icon {
+    width: 32px;
+    height: 32px;
+    background: $accentColorGlow;
+    border: 1px solid $accentColorDim;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    span {
+      font-size: 10px;
+      font-weight: 700;
+      color: $accentColor;
+      font-family: $mainFont;
+      text-transform: uppercase;
+    }
+  }
+
+  .inventory-header-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .inventory-header-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: $accentColor;
+    text-transform: uppercase;
+    font-family: $mainFont;
+    letter-spacing: 1px;
+  }
+
+  .inventory-header-id {
+    font-size: 10px;
+    color: rgba(200, 214, 229, 0.4);
+    font-family: $mainFont;
+  }
+
+  .inventory-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .inventory-weight-text {
+    font-size: 12px;
+    color: rgba(200, 214, 229, 0.6);
+    font-family: $mainFont;
+  }
+
+  .inventory-collapse-btn {
+    background: none;
+    border: 1px solid $slotBorder;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: $accentColor;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: $accentColor;
+      background: $accentColorGlow;
+    }
+    &:active {
+      transform: none;
+    }
   }
 }
 
@@ -317,30 +475,40 @@ button:active {
   overflow-y: scroll;
 }
 
-// inventory slots
+// === Inventory Slots ===
 .inventory-slot {
-  background-color: $secondaryColor;
+  background-color: $slotBg;
   background-repeat: no-repeat;
   background-position: center;
-  border-radius: 2.5%;
+  border-radius: 4px;
   image-rendering: -webkit-optimize-contrast;
   position: relative;
   background-size: 7vh;
   color: $textColor;
-  border-color: rgba(0, 0, 0, 0.2);
-  border-style: inset;
-  border-width: 1px;
+  border: 1px solid $slotBorder;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    border-color: $slotBorderHover;
+    box-shadow: 0 0 8px $accentColorGlow;
+  }
+}
+
+.inventory-slot-filtered {
+  pointer-events: none;
+  &:hover {
+    border-color: $slotBorder;
+    box-shadow: none;
+  }
 }
 
 .inventory-slot-label-box {
-  background-color: $mainColor;
+  background-color: rgba(13, 27, 42, 0.85);
   color: $textColor;
   text-align: center;
-  border-bottom-left-radius: 0.25vh;
-  border-bottom-right-radius: 0.25vh;
-  border-top-color: rgba(0, 0, 0, 0.2);
-  border-top-style: inset;
-  border-top-width: 1px;
+  border-bottom-left-radius: 3px;
+  border-bottom-right-radius: 3px;
+  border-top: 1px solid rgba(0, 229, 255, 0.08);
 }
 
 .inventory-slot-label-text {
@@ -348,27 +516,29 @@ button:active {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: 2px 3px;
-  font-weight: 400;
+  padding: 2px 4px;
+  font-weight: 500;
   font-family: $mainFont;
-  font-size: 12px;
+  font-size: 10px;
+  letter-spacing: 0.3px;
 }
 
 .inventory-slot-number {
-  background-color: white;
-  color: black;
+  background-color: $accentColor;
+  color: $mainColor;
   height: 12px;
-  border-top-left-radius: 0.25vh;
-  border-bottom-right-radius: 0.25vh;
-  padding: 3px;
-  font-size: 12px;
+  border-top-left-radius: 3px;
+  border-bottom-right-radius: 3px;
+  padding: 2px 5px;
+  font-size: 11px;
+  font-weight: 700;
   font-family: $mainFont;
 }
 
 // Rarity star indicator styles
 .rarity-star-wrapper {
   position: absolute;
-  bottom: 22px; // Position above the label
+  bottom: 22px;
   left: 4px;
   pointer-events: none;
 }
@@ -392,13 +562,14 @@ button:active {
   100% { color: #ff0000; filter: drop-shadow(0 0 3px #ff0000); }
 }
 
+// === Item Slot Layout ===
 .item-slot-wrapper {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   height: 100%;
   p {
-    font-size: 12px;
+    font-size: 11px;
   }
 }
 
@@ -421,7 +592,9 @@ button:active {
   padding: 3px;
   gap: 3px;
   p {
-    font-size: 12px;
+    font-size: 11px;
+    color: rgba(200, 214, 229, 0.7);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   }
 }
 
@@ -432,7 +605,7 @@ button:active {
   align-items: center;
   padding-right: 3px;
   p {
-    font-size: 14px;
+    font-size: 13px;
     text-shadow: 0.1vh 0.1vh 0 rgba(0, 0, 0, 0.7);
   }
 }
@@ -443,25 +616,27 @@ button:active {
   justify-content: flex-end;
   padding-right: 3px;
   p {
-    font-size: 14px;
+    font-size: 13px;
     text-shadow: 0.1vh 0.1vh 0 rgba(0, 0, 0, 0.7);
   }
 }
 
+// === Tooltip ===
 .tooltip-wrapper {
   pointer-events: none;
   display: flex;
-  background-color: $mainColor; // Use original main color - should be fully opaque
-  width: 200px;
-  padding: 8px;
+  background-color: $mainColor;
+  width: 220px;
+  padding: 10px;
   flex-direction: column;
-  min-width: 200px;
+  min-width: 220px;
   color: $textColor;
   font-family: $mainFont;
   border-radius: 4px;
-  border-color: rgba(0, 0, 0, 0.2);
-  border-style: inset;
-  border-width: 1px;
+  border: 1px solid $accentColorDim;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 15px $accentColorGlow;
+  backdrop-filter: blur(8px);
+
   p {
     font-size: 12px;
     font-weight: 400;
@@ -474,8 +649,9 @@ button:active {
   justify-content: space-between;
   align-items: center;
   p {
-    font-size: 15px;
-    font-weight: 400;
+    font-size: 14px;
+    font-weight: 600;
+    color: $accentColor;
   }
 }
 
@@ -488,7 +664,7 @@ button:active {
     padding-right: 3px;
   }
   p {
-    font-size: 14px;
+    font-size: 13px;
   }
 }
 
@@ -507,11 +683,11 @@ button:active {
   }
 }
 
-// hotbar
+// === Hotbar ===
 .hotbar-container {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   justify-content: center;
   width: 100%;
   position: absolute;
@@ -519,17 +695,15 @@ button:active {
 }
 
 .hotbar-item-slot {
-  background-color: $secondaryColor;
+  background-color: $slotBg;
   background-repeat: no-repeat;
   background-position: center;
-  border-radius: 2.5%;
+  border-radius: 4px;
   image-rendering: -webkit-optimize-contrast;
   position: relative;
   background-size: 7vh;
   color: $textColor;
-  border-color: rgba(0, 0, 0, 0.2);
-  border-style: inset;
-  border-width: 1px;
+  border: 1px solid $slotBorder;
   width: $gridSize;
   height: $gridSize;
 }
@@ -540,17 +714,17 @@ button:active {
   justify-content: space-between;
 }
 
-// item notifications
+// === Item Notifications ===
 .item-notification-container {
   display: flex;
   overflow-x: scroll;
   flex-wrap: nowrap;
-  gap: 2px;
+  gap: 3px;
   position: absolute;
   bottom: 20vh;
   left: 50%;
   width: 100%;
-  margin-left: calc(50% - calc($gridSize/2));
+  margin-left: calc(50% - calc($gridSize / 2));
   transform: translate(-50%);
 }
 
@@ -560,8 +734,8 @@ button:active {
   background-color: $secondaryColor;
   text-transform: uppercase;
   text-align: center;
-  border-top-left-radius: 0.25vh;
-  border-top-right-radius: 0.25vh;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
   font-family: $mainFont;
   p {
     font-size: 11px;
@@ -571,35 +745,36 @@ button:active {
 }
 
 .item-notification-item-box {
-  background-color: $secondaryColor;
+  background-color: $slotBg;
   background-repeat: no-repeat;
   background-position: center;
-  border-radius: 2.5%;
+  border-radius: 4px;
   image-rendering: -webkit-optimize-contrast;
   position: relative;
   background-size: 7vh;
   color: $textColor;
-  border-color: rgba(0, 0, 0, 0.2);
-  border-style: inset;
-  border-width: 1px;
+  border: 1px solid $slotBorder;
   height: $gridSize;
   width: $gridSize;
 }
 
+// === Weight / Durability Bars ===
 .durability-bar {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4);
   height: 3px;
   overflow: hidden;
+  border-radius: 1px;
 }
 
 .weight-bar {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px inset rgba(0, 0, 0, 0.1);
-  height: 0.8vh;
-  border-radius: 5%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 229, 255, 0.08);
+  height: 4px;
+  border-radius: 2px;
   overflow: hidden;
 }
 
+// === Transitions ===
 .transition-fade-enter {
   opacity: 0;
 }
@@ -619,7 +794,7 @@ button:active {
 }
 
 .transition-slide-up-enter {
-  transform: translateY(200px)
+  transform: translateY(200px);
 }
 
 .transition-slide-up-enter-active {

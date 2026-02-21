@@ -3,7 +3,7 @@ import useNuiEvent from '../../hooks/useNuiEvent';
 import InventoryControl from './InventoryControl';
 import InventoryHotbar from './InventoryHotbar';
 import { useAppDispatch } from '../../store';
-import { refreshSlots, setAdditionalMetadata, setupInventory } from '../../store/inventory';
+import { refreshSlots, setAdditionalMetadata, setFilterText, setupInventory } from '../../store/inventory';
 import { useExitListener } from '../../hooks/useExitListener';
 import type { Inventory as InventoryProps } from '../../typings';
 import RightInventory from './RightInventory';
@@ -23,12 +23,14 @@ const Inventory: React.FC = () => {
     setInventoryVisible(false);
     dispatch(closeContextMenu());
     dispatch(closeTooltip());
+    dispatch(setFilterText(''));
   });
   useExitListener(setInventoryVisible);
 
   useNuiEvent<{
     leftInventory?: InventoryProps;
     rightInventory?: InventoryProps;
+    rightInventories?: InventoryProps[];
   }>('setupInventory', (data) => {
     dispatch(setupInventory(data));
     !inventoryVisible && setInventoryVisible(true);

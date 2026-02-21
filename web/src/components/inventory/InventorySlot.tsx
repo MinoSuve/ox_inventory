@@ -1,7 +1,7 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { DragSource, Inventory, InventoryType, Slot, SlotWithItem } from '../../typings';
 import { useDrag, useDragDropManager, useDrop } from 'react-dnd';
-import { useAppDispatch } from '../../store';
+import { useAppDispatch, useAppSelector } from '../../store';
 import WeightBar from '../utils/WeightBar';
 import { onDrop } from '../../dnd/onDrop';
 import { onBuy } from '../../dnd/onBuy';
@@ -14,6 +14,7 @@ import useNuiEvent from '../../hooks/useNuiEvent';
 import { ItemsPayload } from '../../reducers/refreshSlots';
 import { closeTooltip, openTooltip } from '../../store/tooltip';
 import { openContextMenu } from '../../store/contextMenu';
+import { selectFilterText } from '../../store/inventory';
 import { useMergeRefs } from '@floating-ui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStar } from '@fortawesome/free-solid-svg-icons';
@@ -32,10 +33,22 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
   const manager = useDragDropManager();
   const dispatch = useAppDispatch();
   const timerRef = useRef<number | null>(null);
+  const filterText = useAppSelector(selectFilterText);
+
+  // Determine if this item matches the current filter
+  const isFiltered = useMemo(() => {
+    if (!filterText || !isSlotWithItem(item)) return false;
+    const search = filterText.toLowerCase();
+    const itemLabel = Items[item.name]?.label?.toLowerCase() || '';
+    const itemName = item.name.toLowerCase();
+    const metaLabel = item.metadata?.label?.toLowerCase() || '';
+    return !(itemName.includes(search) || itemLabel.includes(search) || metaLabel.includes(search));
+  }, [filterText, item]);
 
   const canDrag = useCallback(() => {
+    if (isFiltered) return false;
     return canPurchaseItem(item, { type: inventoryType, groups: inventoryGroups }) && canCraftItem(item, inventoryType);
-  }, [item, inventoryType, inventoryGroups]);
+  }, [item, inventoryType, inventoryGroups, isFiltered]);
 
   const [{ isDragging }, drag] = useDrag<DragSource, void, { isDragging: boolean }>(
     () => ({
@@ -47,6 +60,7 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
         isSlotWithItem(item, inventoryType !== InventoryType.SHOP)
           ? {
               inventory: inventoryType,
+              inventoryId: inventoryId,
               item: {
                 name: item.name,
                 slot: item.slot,
@@ -56,7 +70,7 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
           : null,
       canDrag,
     }),
-    [inventoryType, item]
+    [inventoryType, inventoryId, item, isFiltered]
   );
 
   const [{ isOver }, drop] = useDrop<DragSource, void, { isOver: boolean }>(
@@ -69,22 +83,22 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
         dispatch(closeTooltip());
         switch (source.inventory) {
           case InventoryType.SHOP:
-            onBuy(source, { inventory: inventoryType, item: { slot: item.slot } });
+            onBuy(source, { inventory: inventoryType, inventoryId, item: { slot: item.slot } });
             break;
           case InventoryType.CRAFTING:
-            onCraft(source, { inventory: inventoryType, item: { slot: item.slot } });
+            onCraft(source, { inventory: inventoryType, inventoryId, item: { slot: item.slot } });
             break;
           default:
-            onDrop(source, { inventory: inventoryType, item: { slot: item.slot } });
+            onDrop(source, { inventory: inventoryType, inventoryId, item: { slot: item.slot } });
             break;
         }
       },
       canDrop: (source) =>
-        (source.item.slot !== item.slot || source.inventory !== inventoryType) &&
+        (source.item.slot !== item.slot || source.inventory !== inventoryType || source.inventoryId !== inventoryId) &&
         inventoryType !== InventoryType.SHOP &&
         inventoryType !== InventoryType.CRAFTING,
     }),
-    [inventoryType, item]
+    [inventoryType, inventoryId, item]
   );
 
   useNuiEvent('refreshSlots', (data: { items?: ItemsPayload | ItemsPayload[] }) => {
@@ -104,16 +118,18 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
 
   const handleContext = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
+    if (isFiltered) return;
     if (inventoryType !== 'player' || !isSlotWithItem(item)) return;
 
     dispatch(openContextMenu({ item, coords: { x: event.clientX, y: event.clientY } }));
   };
 
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (isFiltered) return;
     dispatch(closeTooltip());
     if (timerRef.current) clearTimeout(timerRef.current);
     if (event.ctrlKey && isSlotWithItem(item) && inventoryType !== 'shop' && inventoryType !== 'crafting') {
-      onDrop({ item: item, inventory: inventoryType });
+      onDrop({ item: item, inventory: inventoryType, inventoryId });
     } else if (event.altKey && isSlotWithItem(item) && inventoryType === 'player') {
       onUse(item);
     }
@@ -126,7 +142,6 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
 
     const rarity = String(item.metadata.rarity).toLowerCase();
     const rarityColors: { [key: string]: string } = {
-      // Original rarities
       'common': '#ffffff',
       'uncommon': '#1eff00',
       'rare': '#0070dd',
@@ -136,9 +151,7 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
       'red': '#ff0000',
       'pink': '#ff69b4',
       'gold': '#ffd700',
-      'rainbow': '#ffffff', // For rainbow, we'll handle this with CSS animation
-
-      // Additional color-based rarities
+      'rainbow': '#ffffff',
       'silver': '#c0c0c0',
       'bronze': '#cd7f32',
       'copper': '#b87333',
@@ -171,26 +184,31 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
 
   const rarityColor = getRarityColor();
 
+  const slotFilter = isFiltered
+    ? 'grayscale(100%) brightness(50%)'
+    : !canPurchaseItem(item, { type: inventoryType, groups: inventoryGroups }) || !canCraftItem(item, inventoryType)
+    ? 'brightness(80%) grayscale(100%)'
+    : undefined;
+
   return (
     <div
       ref={refs}
       onContextMenu={handleContext}
       onClick={handleClick}
-      className="inventory-slot"
+      className={`inventory-slot ${isFiltered ? 'inventory-slot-filtered' : ''}`}
       style={{
-        filter:
-          !canPurchaseItem(item, { type: inventoryType, groups: inventoryGroups }) || !canCraftItem(item, inventoryType)
-            ? 'brightness(80%) grayscale(100%)'
-            : undefined,
+        filter: slotFilter,
         opacity: isDragging ? 0.4 : 1.0,
         backgroundImage: `url(${item?.name ? getItemUrl(item as SlotWithItem) : 'none'}`,
-        border: isOver ? '1px dashed rgba(255,255,255,0.4)' : '',
+        border: isOver ? '1px dashed rgba(0, 229, 255, 0.6)' : '',
+        pointerEvents: isFiltered ? 'none' : 'auto',
       }}
     >
       {isSlotWithItem(item) && (
         <div
           className="item-slot-wrapper"
           onMouseEnter={() => {
+            if (isFiltered) return;
             timerRef.current = window.setTimeout(() => {
               dispatch(openTooltip({ item, inventoryType }));
             }, 500) as unknown as number;
@@ -262,7 +280,6 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
                 )}
               </>
             )}
-            {/* Rarity Star Indicator */}
             {rarityColor && (
               <div className="rarity-star-wrapper">
                 <FontAwesomeIcon
@@ -270,7 +287,7 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
                   className={`rarity-star ${item.metadata?.rarity === 'rainbow' ? 'rarity-star-rainbow' : ''}`}
                   style={{
                     color: item.metadata?.rarity === 'rainbow' ? undefined : rarityColor,
-                    filter: `drop-shadow(0 0 3px ${rarityColor})`
+                    filter: `drop-shadow(0 0 3px ${rarityColor})`,
                   }}
                 />
               </div>

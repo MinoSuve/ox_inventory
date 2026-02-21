@@ -21,11 +21,17 @@ export const refreshSlotsReducer: CaseReducer<State, PayloadAction<Payload>> = (
     Object.values(action.payload.items)
       .filter((data) => !!data)
       .forEach((data) => {
-        const targetInventory = data.inventory
-          ? data.inventory !== InventoryType.PLAYER
-            ? state.rightInventory
-            : state.leftInventory
-          : state.leftInventory;
+        let targetInventory;
+        if (data.inventory) {
+          if (data.inventory === InventoryType.PLAYER) {
+            targetInventory = state.leftInventory;
+          } else {
+            // Search across rightInventories array first
+            targetInventory = state.rightInventories.find((inv) => inv.type === data.inventory) || state.rightInventory;
+          }
+        } else {
+          targetInventory = state.leftInventory;
+        }
 
         data.item.durability = itemDurability(data.item.metadata, curTime);
         targetInventory.items[data.item.slot - 1] = data.item;
@@ -36,6 +42,10 @@ export const refreshSlotsReducer: CaseReducer<State, PayloadAction<Payload>> = (
     if (state.rightInventory.type === InventoryType.CRAFTING) {
       state.rightInventory = { ...state.rightInventory };
     }
+    // Also check rightInventories for crafting
+    state.rightInventories = state.rightInventories.map((inv) =>
+      inv.type === InventoryType.CRAFTING ? { ...inv } : inv
+    );
   }
 
   if (action.payload.itemCount) {
@@ -55,38 +65,45 @@ export const refreshSlotsReducer: CaseReducer<State, PayloadAction<Payload>> = (
   if (action.payload.weightData) {
     const inventoryId = action.payload.weightData.inventoryId;
     const inventoryMaxWeight = action.payload.weightData.maxWeight;
-    const inv =
-      inventoryId === state.leftInventory.id
-        ? 'leftInventory'
-        : inventoryId === state.rightInventory.id
-        ? 'rightInventory'
-        : null;
 
-    if (!inv) return;
-
-    state[inv].maxWeight = inventoryMaxWeight;
+    if (inventoryId === state.leftInventory.id) {
+      state.leftInventory.maxWeight = inventoryMaxWeight;
+    } else if (inventoryId === state.rightInventory.id) {
+      state.rightInventory.maxWeight = inventoryMaxWeight;
+    } else {
+      // Search in rightInventories array
+      const rightInv = state.rightInventories.find((inv) => inv.id === inventoryId);
+      if (rightInv) rightInv.maxWeight = inventoryMaxWeight;
+    }
   }
 
   if (action.payload.slotsData) {
     const { inventoryId } = action.payload.slotsData;
     const { slots } = action.payload.slotsData;
 
-    const inv =
-      inventoryId === state.leftInventory.id
-        ? 'leftInventory'
-        : inventoryId === state.rightInventory.id
-        ? 'rightInventory'
-        : null;
-
-    if (!inv) return;
-
-    state[inv].slots = slots;
-    inventorySlice.caseReducers.setupInventory(state, {
-      type: 'setupInventory',
-      payload: {
-        leftInventory: inv === 'leftInventory' ? state[inv] : undefined,
-        rightInventory: inv === 'rightInventory' ? state[inv] : undefined,
-      },
-    });
+    if (inventoryId === state.leftInventory.id) {
+      state.leftInventory.slots = slots;
+      inventorySlice.caseReducers.setupInventory(state, {
+        type: 'setupInventory',
+        payload: { leftInventory: state.leftInventory },
+      });
+    } else if (inventoryId === state.rightInventory.id) {
+      state.rightInventory.slots = slots;
+      inventorySlice.caseReducers.setupInventory(state, {
+        type: 'setupInventory',
+        payload: { rightInventory: state.rightInventory },
+      });
+    } else {
+      // Search in rightInventories array
+      const rightInvIndex = state.rightInventories.findIndex((inv) => inv.id === inventoryId);
+      if (rightInvIndex !== -1) {
+        state.rightInventories[rightInvIndex].slots = slots;
+        const updatedInventories = [...state.rightInventories];
+        inventorySlice.caseReducers.setupInventory(state, {
+          type: 'setupInventory',
+          payload: { rightInventories: updatedInventories },
+        });
+      }
+    }
   }
 };

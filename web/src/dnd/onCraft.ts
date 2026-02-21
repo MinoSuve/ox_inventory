@@ -7,7 +7,10 @@ import { craftItem } from '../thunks/craftItem';
 export const onCraft = (source: DragSource, target: DropTarget) => {
   const { inventory: state } = store.getState();
 
-  const sourceInventory = state.rightInventory;
+  // Find source inventory from rightInventories array, fallback to rightInventory
+  const sourceInventory = source.inventoryId
+    ? state.rightInventories.find((inv) => inv.id === source.inventoryId) || state.rightInventory
+    : state.rightInventory;
   const targetInventory = state.leftInventory;
 
   const sourceSlot = sourceInventory.items[source.item.slot - 1];
